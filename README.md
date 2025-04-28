@@ -254,6 +254,5 @@ Collez ce token dans Swagger via le bouton "Authorize" pour tester les endpoints
 
 
 ## Contact
-Pour toute question ou suggestion, contactez [kingrobot790@gmail.com](mailto:kingrobot790@gmail.com).#   g e s t i o n _ r e s e r v a t i o n 
- 
+Pour toute question ou suggestion, contactez [kingrobot790@gmail.com](mailto:kingrobot790@gmail.com).
  
