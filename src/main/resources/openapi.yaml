@@ -1,0 +1,177 @@
+openapi: 3.0.1
+info:
+  title: API de Réservation de Matériel Scientifique
+  description: Spécification OpenAPI pour le Projet 4 - B2A
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Utilisateur:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [CHERCHEUR, GESTIONNAIRE] }
+    Equipement:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        numeroSerie: { type: string }
+        etat: { type: string, enum: [DISPONIBLE, MAINTENANCE, EN_COURS] }
+        laboratoire: { type: string }
+    Reservation:
+      type: object
+      properties:
+        id: { type: integer }
+        utilisateur: { $ref: '#/components/schemas/Utilisateur' }
+        equipement: { $ref: '#/components/schemas/Equipement' }
+        dateDebut: { type: string, format: date-time }
+        dateFin: { type: string, format: date-time }
+        statut: { type: string, enum: [EN_ATTENTE, CONFIRMEE, ANNULEE, EXPIREE] }
+    Maintenance:
+      type: object
+      properties:
+        id: { type: integer }
+        equipement: { $ref: '#/components/schemas/Equipement' }
+        date: { type: string, format: date }
+        actions: { type: string }
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Connexion utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Token JWT
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Inscription utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Utilisateur'
+      responses:
+        '201': { description: Créé }
+
+  /api/equipements:
+    get:
+      tags: [Equipements]
+      summary: Lister les équipements
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Equipement' }
+    post:
+      tags: [Equipements]
+      security: [ { bearerAuth: [] } ]
+      summary: Ajouter un équipement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Equipement' }
+      responses:
+        '201': { description: Créé }
+
+  /api/equipements/{id}:
+    get:
+      tags: [Equipements]
+      summary: Détail équipement
+      parameters:
+        - in: path
+          name: id
+          schema: { type: integer }
+          required: true
+      responses:
+        '200': { description: OK }
+
+  /api/reservations:
+    get:
+      tags: [Réservations]
+      summary: Lister les réservations
+      responses:
+        '200':
+          description: Liste
+    post:
+      tags: [Réservations]
+      security: [ { bearerAuth: [] } ]
+      summary: Créer une réservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Reservation' }
+      responses:
+        '201': { description: Créé }
+
+  /api/reservations/{id}/status:
+    patch:
+      tags: [Réservations]
+      security: [ { bearerAuth: [] } ]
+      summary: Modifier le statut
+      parameters:
+        - in: path
+          name: id
+          schema: { type: integer }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                etat: { type: string }
+
+  /api/maintenances:
+    get:
+      tags: [Maintenance]
+      summary: Lister maintenances
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Maintenance]
+      security: [ { bearerAuth: [] } ]
+      summary: Créer une maintenance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Maintenance' }
+      responses:
+        '201': { description: OK }
