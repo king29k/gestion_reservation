@@ -32,7 +32,7 @@ L'application est un backend **100% RESTful** basé sur **Spring Boot**, sécuri
 ## Installation
 ### 1. Cloner le dépôt
 ```bash
-git clonehttps://github.com/king29k/lab_equip_reservation.git
+git clonehttps://github.com/king29k/https://github.com/king29k/gestion_reservation.git
 cd lab_equip_reservation
 ```
 
