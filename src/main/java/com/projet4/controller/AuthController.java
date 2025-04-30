@@ -1,5 +1,6 @@
 package com.projet4.controller;
 
+import com.projet4.dto.AuthResponse;
 import com.projet4.dto.LoginRequest;
 import com.projet4.dto.RegisterRequest;
 import com.projet4.model.Utilisateur;
@@ -13,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,9 +46,16 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
         UserDetails user = (UserDetails) auth.getPrincipal();
-        String token = jwtService.generateToken(user);
-        return ResponseEntity.ok(Map.of("token", token));
+
+        Utilisateur utilisateur = utilisateurRepo.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
+
+        String token = jwtService.generateToken(user); // méthode sans paramètre "role"
+        AuthResponse response = new AuthResponse(token, utilisateur.getRole().name(), utilisateur.getName());
+
+        return ResponseEntity.ok(response);
     }
+
 
     @Operation(summary = "Inscription", description = "Permet à un chercheur ou gestionnaire de s'enregistrer")
     @PostMapping("/register")
@@ -53,12 +63,33 @@ public class AuthController {
         if (utilisateurRepo.existsByEmail(request.getEmail())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email déjà utilisé");
         }
+
         Utilisateur user = new Utilisateur();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(encoder.encode(request.getPassword()));
         user.setRole(request.getRole());
+
         utilisateurRepo.save(user);
+
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Récupérer l'utilisateur courant")
+    @GetMapping("/me")
+    public ResponseEntity<?> me(@AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+
+        Utilisateur user = utilisateurRepo.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+
+        Map<String, Object> dto = Map.of(
+                "id", user.getId(),
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "role", user.getRole()
+        );
+
+        return ResponseEntity.ok(dto);
     }
 }

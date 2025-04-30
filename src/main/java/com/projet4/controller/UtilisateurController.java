@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,11 +26,23 @@ public class UtilisateurController {
     private final UtilisateurRepository utilisateurRepo;
 
     @Operation(summary = "Obtenir son propre profil utilisateur")
-    @GetMapping("/me")
-    public ResponseEntity<?> getMyProfile(Authentication auth) {
+    public ResponseEntity<Utilisateur> getMyProfile(Authentication auth) {
+        // 1. Récupère l'email depuis le token JWT injecté par Spring Security
         String email = auth.getName();
-        Utilisateur user = utilisateurRepo.findByEmail(email).orElseThrow();
-        return ResponseEntity.ok(user);
+
+        // 2. Charge l'entité Utilisateur depuis la DB
+        Utilisateur user = utilisateurRepo.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable"));
+
+
+        Utilisateur dto = new Utilisateur();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+
+        // 4. Renvoie le DTO
+        return ResponseEntity.ok(dto);
     }
 
     @Operation(summary = "Lister tous les utilisateurs")
